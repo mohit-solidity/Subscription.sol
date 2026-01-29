@@ -81,7 +81,7 @@ contract Subscription{
         if(!isCreator[_creator]){revert NotTheCreator();}
         isCreator[_creator] = false;
         Creator storage c = creatorProfile[_creator];
-        isValidUserName[c.name] = false;
+        isValidUserName[c.name] = true;
         emit CreatorRemoved(_creator);
     }
     function setCreatorData(string memory name,uint amount) public onlyCreator whenNotPaused{
@@ -117,6 +117,7 @@ contract Subscription{
         uint amount = msg.value - fee;
         c.totalBalance += amount;
         subscriptionNFT.mintOrRenewNFT(msg.sender, _creator, expiry);
+        hasSubscribedBefore[msg.sender][_creator] = true;
         emit SubscriptionBought(msg.sender, _creator, msg.value);
     }
     function creatorWithdraw(uint amount) public onlyCreator noReentrancy whenNotPaused{
@@ -130,7 +131,7 @@ contract Subscription{
     function isValidSubscription(address user,address _creator) public view returns(bool){
         return (subscriptionNFT.isValidSubscription(user,_creator));
     }
-    function collectFee(uint amount) public onlyOwner{
+    function collectFee(uint amount) public onlyOwner whenNotPaused{
         require(amount<=feeCollected,"Not Enough Fee Generated");
         feeCollected -= amount;
         (bool success,) = payable(msg.sender).call{value:amount}("");
